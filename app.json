@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Bahrain Premium Deals",
+    "slug": "bahrain-premium-deals",
+    "version": "1.0.0",
+    "sdkVersion": "54.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bahraindeals.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1a1a2e"
+      },
+      "package": "com.bahraindeals.app"
+    },
+    "plugins": [
+      "expo-asset"
+    ]
+  }
+}

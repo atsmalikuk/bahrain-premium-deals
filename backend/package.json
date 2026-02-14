@@ -1,0 +1,18 @@
+{
+  "name": "bahrain-deals-backend",
+  "version": "1.0.0",
+  "description": "Backend scraper and API for Bahrain Premium Deals app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "cheerio": "^1.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "node-cron": "^3.0.3",
+    "puppeteer": "^23.0.0"
+  }
+}
