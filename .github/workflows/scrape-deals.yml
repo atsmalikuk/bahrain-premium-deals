@@ -2,8 +2,8 @@ name: Scrape Bahrain Deals
 
 on:
   schedule:
-    # Run every 30 minutes
-    - cron: '*/30 * * * *'
+    # Run every 4 hours
+    - cron: '0 */4 * * *'
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
 jobs:
@@ -39,9 +39,9 @@ jobs:
             libgtk-3-0t64 \
             libxshmfence1
 
-      - name: Run scrapers and update Gist
+      - name: Run scrapers and save to Supabase
         working-directory: backend
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          GIST_ID: ${{ secrets.GIST_ID }}
-        run: node scrape-to-gist.js
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: node scrape-to-supabase.js

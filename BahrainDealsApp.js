@@ -14,75 +14,12 @@ import {
   ActivityIndicator,
   RefreshControl
 } from 'react-native';
-
-// Deals data URL — points to a GitHub Gist updated by GitHub Actions
-// Replace YOUR_USERNAME and YOUR_GIST_ID after creating your Gist
-const API_URL = 'https://gist.githubusercontent.com/atsmalikuk/bd03cdaa8d3c955a57a69cff1a4d6ce7/raw/deals.json';
-
-// Fallback deals when backend is unreachable
-const FALLBACK_DEALS = [
-  {
-    id: 1,
-    title: 'Fresh Norwegian Salmon',
-    originalPrice: 8.5,
-    discountedPrice: 5.9,
-    discount: 30,
-    store: 'Lulu Hypermarket',
-    category: 'Premium Seafood',
-    location: 'Manama',
-    image: '🐟',
-    expiryDate: '2026-02-15',
-    stock: 'Limited',
-    isYellowSticker: true
-  },
-  {
-    id: 2,
-    title: 'Turkish Pistachios 500g',
-    originalPrice: 12.0,
-    discountedPrice: 8.4,
-    discount: 30,
-    store: 'Al Jazira',
-    category: 'Premium Nuts',
-    location: 'Riffa',
-    image: '🥜',
-    expiryDate: '2026-03-01',
-    stock: 'Available',
-    isYellowSticker: false
-  },
-  {
-    id: 3,
-    title: 'Dior Sauvage EDT 100ml',
-    originalPrice: 65.0,
-    discountedPrice: 48.75,
-    discount: 25,
-    store: 'HyperMax',
-    category: 'Fragrances',
-    location: 'Seef',
-    image: '💎',
-    expiryDate: '2026-12-31',
-    stock: 'Available',
-    isYellowSticker: false
-  },
-  {
-    id: 4,
-    title: 'Organic Medjool Dates 1kg',
-    originalPrice: 15.0,
-    discountedPrice: 10.5,
-    discount: 30,
-    store: 'Alosra',
-    category: 'Premium Dry Fruits',
-    location: 'Muharraq',
-    image: '🌴',
-    expiryDate: '2026-04-01',
-    stock: 'Limited',
-    isYellowSticker: true
-  }
-];
+import { supabase } from './supabaseClient';
 
 // Main App Component
 export default function BahrainDealsApp() {
   const [currentScreen, setCurrentScreen] = useState('home');
-  const [deals, setDeals] = useState(FALLBACK_DEALS);
+  const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -97,30 +34,44 @@ export default function BahrainDealsApp() {
   const categories = ['All', 'Premium Seafood', 'Premium Nuts', 'Premium Dry Fruits', 'Fragrances', 'Electronics', 'Seafood', 'Meat', 'Dairy', 'Groceries'];
   const stores = ['All', 'Lulu Hypermarket', 'Al Jazira', 'HyperMax', 'Alosra'];
 
-  // Fetch deals from backend
+  // Fetch deals from Supabase
   const fetchDeals = useCallback(async () => {
     try {
       setError(null);
-      const response = await fetch(API_URL);
-      const data = await response.json();
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error: fetchError } = await supabase
+        .from('deals')
+        .select('*')
+        .or(`expiry_date.gte.${today},expiry_date.is.null`)
+        .order('updated_at', { ascending: false });
 
-      if (data.success && data.deals && data.deals.length > 0) {
-        // Add emoji fallback for deals that have image URLs instead of emojis
-        const dealsWithEmoji = data.deals.map(deal => ({
-          ...deal,
-          image: deal.image && deal.image.startsWith('http') ? '🛒' : (deal.image || '🛒'),
+      if (fetchError) throw fetchError;
+
+      if (data && data.length > 0) {
+        const mapped = data.map(row => ({
+          id: row.id,
+          title: row.title,
+          originalPrice: Number(row.original_price) || 0,
+          discountedPrice: Number(row.discounted_price) || 0,
+          discount: Number(row.discount) || 0,
+          store: row.store,
+          category: row.category || 'Groceries',
+          location: row.location || 'Bahrain',
+          image: row.image && row.image.startsWith('http') ? '🛒' : (row.image || '🛒'),
+          expiryDate: row.expiry_date || '',
+          stock: row.stock || 'Available',
+          isYellowSticker: row.is_yellow_sticker || false,
         }));
-        setDeals(dealsWithEmoji);
-        setLastUpdated(data.lastUpdated);
+        setDeals(mapped);
+        setLastUpdated(data[0].updated_at);
       } else {
-        // Backend returned no deals — use fallback
-        setDeals(FALLBACK_DEALS);
-        setError('No live deals available. Showing sample deals.');
+        setDeals([]);
+        setError('No deals available right now. Pull down to refresh.');
       }
     } catch (err) {
       console.log('Failed to fetch deals:', err.message);
-      setDeals(FALLBACK_DEALS);
-      setError('Could not connect to server. Showing sample deals.');
+      setDeals([]);
+      setError('Could not load deals. Pull down to try again.');
     } finally {
       setLoading(false);
       setRefreshing(false);
