@@ -34,9 +34,9 @@ jobs:
             libxdamage1 \
             libxrandr2 \
             libgbm1 \
-            libasound2 \
+            libasound2t64 \
             libpangocairo-1.0-0 \
-            libgtk-3-0 \
+            libgtk-3-0t64 \
             libxshmfence1
 
       - name: Run scrapers and update Gist
