@@ -1,6 +1,20 @@
 module.exports = {
   port: process.env.PORT || 3000,
-  scrapeInterval: '*/30 * * * *', // Every 30 minutes
+  scrapeInterval: '0 */4 * * *', // Every 4 hours
+  sources: {
+    d4d: {
+      name: 'D4D Online',
+      productsUrl: 'https://d4donline.com/en/bahrain/bahrain/products',
+      method: 'puppeteer',
+    },
+    alosraApi: {
+      name: 'Alosra',
+      graphqlUrl: 'https://www.alosraonline.com/graphql',
+      saversCategoryId: '161',
+      method: 'graphql',
+    },
+  },
+  // Legacy store configs (scrapers broken — kept for reference)
   stores: {
     lulu: {
       name: 'Lulu Hypermarket',

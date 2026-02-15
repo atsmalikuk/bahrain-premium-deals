@@ -8,10 +8,8 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
-const scrapeLulu = require('./scrapers/lulu');
-const scrapeAlJazira = require('./scrapers/alJazira');
-const scrapeAlosra = require('./scrapers/alosra');
-const scrapeHyperMax = require('./scrapers/hypermax');
+const scrapeD4D = require('./scrapers/d4d');
+const scrapeAlosraApi = require('./scrapers/alosraApi');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
@@ -24,10 +22,8 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 const scrapers = [
-  { name: 'lulu', fn: scrapeLulu },
-  { name: 'aljazira', fn: scrapeAlJazira },
-  { name: 'alosra', fn: scrapeAlosra },
-  { name: 'hypermax', fn: scrapeHyperMax },
+  { name: 'd4d', fn: scrapeD4D },
+  { name: 'alosra-api', fn: scrapeAlosraApi },
 ];
 
 async function runScrapers() {

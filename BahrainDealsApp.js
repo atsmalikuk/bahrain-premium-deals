@@ -31,8 +31,8 @@ export default function BahrainDealsApp() {
   const [showAddDeal, setShowAddDeal] = useState(false);
   const [showSubmitDeal, setShowSubmitDeal] = useState(false);
 
-  const categories = ['All', 'Premium Seafood', 'Premium Nuts', 'Premium Dry Fruits', 'Fragrances', 'Electronics', 'Seafood', 'Meat', 'Dairy', 'Groceries'];
-  const stores = ['All', 'Lulu Hypermarket', 'Al Jazira', 'HyperMax', 'Alosra'];
+  const categories = ['All', 'Groceries', 'Electronics', 'Appliances', 'Seafood', 'Meat', 'Dairy', 'Fruits', 'Vegetables', 'Beverages', 'Snacks', 'Bakery', 'Health & Beauty', 'Household', 'Fragrances', 'Premium Nuts', 'Premium Dry Fruits'];
+  const stores = ['All', 'Lulu Hypermarket', 'Alosra', 'HyperMax', 'Nesto', 'eXtra', 'Sharaf DG', 'Ansar Gallery', 'Ramez', 'Carrefour'];
 
   // Fetch deals from Supabase
   const fetchDeals = useCallback(async () => {
