@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,12 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  Dimensions
 } from 'react-native';
 import { supabase } from './supabaseClient';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Main App Component
 export default function BahrainDealsApp() {
@@ -96,26 +99,33 @@ export default function BahrainDealsApp() {
     return categoryMatch && storeMatch;
   });
 
+  // Best offers: top 5 deals sorted by highest discount
+  const bestOffers = useMemo(() => {
+    return [...deals]
+      .sort((a, b) => b.discount - a.discount)
+      .slice(0, 5);
+  }, [deals]);
+
   // Navigation Component
   const Navigation = () => (
     <View style={styles.navigation}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.navButton, currentScreen === 'home' && styles.navButtonActive]}
         onPress={() => setCurrentScreen('home')}
       >
         <Text style={styles.navIcon}>🏠</Text>
         <Text style={[styles.navText, currentScreen === 'home' && styles.navTextActive]}>Home</Text>
       </TouchableOpacity>
-      
-      <TouchableOpacity 
+
+      <TouchableOpacity
         style={[styles.navButton, currentScreen === 'submit' && styles.navButtonActive]}
         onPress={() => setCurrentScreen('submit')}
       >
         <Text style={styles.navIcon}>➕</Text>
         <Text style={[styles.navText, currentScreen === 'submit' && styles.navTextActive]}>Submit</Text>
       </TouchableOpacity>
-      
-      <TouchableOpacity 
+
+      <TouchableOpacity
         style={[styles.navButton, currentScreen === 'admin' && styles.navButtonActive]}
         onPress={() => setCurrentScreen('admin')}
       >
@@ -130,7 +140,7 @@ export default function BahrainDealsApp() {
     if (loading) {
       return (
         <View style={[styles.container, styles.centerContent]}>
-          <ActivityIndicator size="large" color="#4ecdc4" />
+          <ActivityIndicator size="large" color="#7C3AED" />
           <Text style={styles.loadingText}>Loading deals...</Text>
         </View>
       );
@@ -143,8 +153,8 @@ export default function BahrainDealsApp() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor="#4ecdc4"
-          colors={['#4ecdc4']}
+          tintColor="#7C3AED"
+          colors={['#7C3AED']}
         />
       }
     >
@@ -165,22 +175,48 @@ export default function BahrainDealsApp() {
         </View>
       )}
 
-      {/* Category Filter */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
-        {categories.map(category => (
-          <TouchableOpacity
-            key={category}
-            style={[styles.filterChip, selectedCategory === category && styles.filterChipActive]}
-            onPress={() => setSelectedCategory(category)}
-          >
-            <Text style={[styles.filterText, selectedCategory === category && styles.filterTextActive]}>
-              {category}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      {/* Best Offers Carousel */}
+      {bestOffers.length > 0 && (
+        <View style={styles.bestOffersSection}>
+          <Text style={styles.bestOffersTitle}>Best Offers</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bestOffersScroll}>
+            {bestOffers.map(deal => (
+              <View key={`best-${deal.id}`} style={styles.bestOfferCard}>
+                <View style={styles.bestOfferDiscount}>
+                  <Text style={styles.bestOfferDiscountText}>{deal.discount}% OFF</Text>
+                </View>
+                <Text style={styles.bestOfferEmoji}>{deal.image}</Text>
+                <Text style={styles.bestOfferTitle} numberOfLines={2}>{deal.title}</Text>
+                <View style={styles.bestOfferPricing}>
+                  <Text style={styles.bestOfferOriginal}>BHD {deal.originalPrice.toFixed(2)}</Text>
+                  <Text style={styles.bestOfferPrice}>BHD {deal.discountedPrice.toFixed(2)}</Text>
+                </View>
+                <Text style={styles.bestOfferStore}>{deal.store}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
-      {/* Store Filter */}
+      {/* Category Filter - Vertical 2-Column Grid */}
+      <View style={styles.categorySection}>
+        <Text style={styles.categorySectionTitle}>Categories</Text>
+        <View style={styles.categoryGrid}>
+          {categories.map(category => (
+            <TouchableOpacity
+              key={category}
+              style={[styles.categoryChip, selectedCategory === category && styles.categoryChipActive]}
+              onPress={() => setSelectedCategory(category)}
+            >
+              <Text style={[styles.categoryChipText, selectedCategory === category && styles.categoryChipTextActive]}>
+                {category}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Store Filter - Horizontal Scroll */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
         {stores.map(store => (
           <TouchableOpacity
@@ -207,7 +243,7 @@ export default function BahrainDealsApp() {
                 <Text style={styles.badgeText}>⚡ Yellow Sticker</Text>
               </View>
             )}
-            
+
             <View style={styles.dealHeader}>
               <Text style={styles.dealEmoji}>{deal.image}</Text>
               <View style={styles.dealInfo}>
@@ -267,7 +303,7 @@ export default function BahrainDealsApp() {
       }
 
       const discount = Math.round(((parseFloat(formData.originalPrice) - parseFloat(formData.discountedPrice)) / parseFloat(formData.originalPrice)) * 100);
-      
+
       Alert.alert('Success', 'Deal submitted for review! Our team will verify and add it soon.');
       setFormData({
         title: '',
@@ -378,7 +414,7 @@ export default function BahrainDealsApp() {
       }
 
       const discount = Math.round(((parseFloat(newDeal.originalPrice) - parseFloat(newDeal.discountedPrice)) / parseFloat(newDeal.originalPrice)) * 100);
-      
+
       const dealToAdd = {
         id: deals.length + 1,
         title: newDeal.title,
@@ -396,7 +432,7 @@ export default function BahrainDealsApp() {
 
       setDeals([dealToAdd, ...deals]);
       Alert.alert('Success', 'Deal added successfully!');
-      
+
       setNewDeal({
         title: '',
         originalPrice: '',
@@ -496,7 +532,7 @@ export default function BahrainDealsApp() {
             onChangeText={(text) => setNewDeal({...newDeal, expiryDate: text})}
           />
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.checkboxContainer}
             onPress={() => setNewDeal({...newDeal, isYellowSticker: !newDeal.isYellowSticker})}
           >
@@ -523,12 +559,12 @@ export default function BahrainDealsApp() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#1a1a2e" />
-      
+      <StatusBar barStyle="light-content" backgroundColor="#6B21A8" />
+
       {currentScreen === 'home' && <HomeScreen />}
       {currentScreen === 'submit' && <SubmitDealScreen />}
       {currentScreen === 'admin' && <AdminScreen />}
-      
+
       <Navigation />
     </SafeAreaView>
   );
@@ -537,16 +573,16 @@ export default function BahrainDealsApp() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#6B21A8',
   },
   container: {
     flex: 1,
-    backgroundColor: '#0f0f1e',
+    backgroundColor: '#f5f0ff',
   },
   header: {
     padding: 20,
     paddingTop: 30,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#6B21A8',
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
   },
@@ -559,67 +595,158 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#ff6b6b',
+    color: '#e9d5ff',
     fontWeight: '600',
   },
   filterContainer: {
     paddingHorizontal: 15,
-    paddingVertical: 15,
-  },
-  filterChip: {
-    paddingHorizontal: 18,
     paddingVertical: 10,
-    backgroundColor: '#16213e',
+  },
+
+  // Best Offers Section
+  bestOffersSection: {
+    paddingTop: 20,
+    paddingBottom: 5,
+  },
+  bestOffersTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1a1a2e',
+    marginLeft: 15,
+    marginBottom: 12,
+  },
+  bestOffersScroll: {
+    paddingLeft: 15,
+  },
+  bestOfferCard: {
+    width: 180,
+    backgroundColor: '#6B21A8',
     borderRadius: 20,
-    marginRight: 10,
-    borderWidth: 2,
-    borderColor: '#16213e',
+    padding: 15,
+    marginRight: 12,
+    position: 'relative',
   },
-  filterChipActive: {
-    backgroundColor: '#ff6b6b',
-    borderColor: '#ff6b6b',
+  bestOfferDiscount: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: '#E11D48',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    zIndex: 10,
   },
-  filterText: {
-    color: '#8892b0',
+  bestOfferDiscountText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  bestOfferEmoji: {
+    fontSize: 40,
+    marginBottom: 8,
+  },
+  bestOfferTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 8,
   },
-  filterTextActive: {
+  bestOfferPricing: {
+    marginBottom: 6,
+  },
+  bestOfferOriginal: {
+    fontSize: 12,
+    color: '#d8b4fe',
+    textDecorationLine: 'line-through',
+  },
+  bestOfferPrice: {
+    fontSize: 20,
+    fontWeight: '800',
     color: '#ffffff',
   },
+  bestOfferStore: {
+    fontSize: 11,
+    color: '#e9d5ff',
+    fontWeight: '600',
+  },
+
+  // Category Grid
+  categorySection: {
+    paddingHorizontal: 15,
+    paddingTop: 15,
+    paddingBottom: 5,
+  },
+  categorySectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1a1a2e',
+    marginBottom: 12,
+  },
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  categoryChip: {
+    width: (SCREEN_WIDTH - 45) / 2,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    marginBottom: 10,
+    borderWidth: 1.5,
+    borderColor: '#e9d5ff',
+    alignItems: 'center',
+  },
+  categoryChipActive: {
+    backgroundColor: '#7C3AED',
+    borderColor: '#7C3AED',
+  },
+  categoryChipText: {
+    color: '#6B21A8',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  categoryChipTextActive: {
+    color: '#ffffff',
+  },
+
+  // Store chips (horizontal)
   storeChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#ffffff',
     borderRadius: 15,
     marginRight: 10,
     borderWidth: 1,
-    borderColor: '#2d3561',
+    borderColor: '#e9d5ff',
   },
   storeChipActive: {
-    backgroundColor: '#4ecdc4',
-    borderColor: '#4ecdc4',
+    backgroundColor: '#7C3AED',
+    borderColor: '#7C3AED',
   },
   storeText: {
-    color: '#8892b0',
+    color: '#6B21A8',
     fontSize: 13,
     fontWeight: '500',
   },
   storeTextActive: {
-    color: '#0f0f1e',
+    color: '#ffffff',
     fontWeight: '700',
   },
+
+  // Deals
   dealsContainer: {
     padding: 15,
     paddingBottom: 100,
   },
   dealCard: {
-    backgroundColor: '#16213e',
+    backgroundColor: '#ffffff',
     borderRadius: 20,
     padding: 20,
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: '#2d3561',
+    borderColor: '#e9d5ff',
   },
   yellowStickerBadge: {
     position: 'absolute',
@@ -651,12 +778,12 @@ const styles = StyleSheet.create({
   dealTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#ffffff',
+    color: '#1a1a2e',
     marginBottom: 4,
   },
   dealCategory: {
     fontSize: 13,
-    color: '#4ecdc4',
+    color: '#7C3AED',
     fontWeight: '600',
   },
   dealPricing: {
@@ -666,7 +793,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     paddingTop: 15,
     borderTopWidth: 1,
-    borderTopColor: '#2d3561',
+    borderTopColor: '#f0e6ff',
   },
   priceRow: {
     flexDirection: 'row',
@@ -674,17 +801,17 @@ const styles = StyleSheet.create({
   },
   originalPrice: {
     fontSize: 16,
-    color: '#8892b0',
+    color: '#9ca3af',
     textDecorationLine: 'line-through',
     marginRight: 10,
   },
   discountedPrice: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#4ecdc4',
+    color: '#6B21A8',
   },
   discountBadge: {
-    backgroundColor: '#ff6b6b',
+    backgroundColor: '#E11D48',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
@@ -708,7 +835,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   storeName: {
-    color: '#ffffff',
+    color: '#1a1a2e',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -721,7 +848,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   locationName: {
-    color: '#8892b0',
+    color: '#6b7280',
     fontSize: 13,
   },
   stockInfo: {
@@ -729,17 +856,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#2d3561',
+    borderTopColor: '#f0e6ff',
   },
   stockText: {
-    color: '#ffd93d',
+    color: '#d97706',
     fontSize: 12,
     fontWeight: '600',
   },
   expiryText: {
-    color: '#8892b0',
+    color: '#6b7280',
     fontSize: 12,
   },
+
+  // Navigation
   navigation: {
     position: 'absolute',
     bottom: 0,
@@ -747,11 +876,11 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     justifyContent: 'space-around',
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#ffffff',
     paddingVertical: 15,
     paddingBottom: 25,
     borderTopWidth: 1,
-    borderTopColor: '#2d3561',
+    borderTopColor: '#e9d5ff',
   },
   navButton: {
     alignItems: 'center',
@@ -760,60 +889,62 @@ const styles = StyleSheet.create({
     borderRadius: 15,
   },
   navButtonActive: {
-    backgroundColor: '#16213e',
+    backgroundColor: '#f3e8ff',
   },
   navIcon: {
     fontSize: 24,
     marginBottom: 4,
   },
   navText: {
-    color: '#8892b0',
+    color: '#9ca3af',
     fontSize: 12,
     fontWeight: '600',
   },
   navTextActive: {
-    color: '#4ecdc4',
+    color: '#7C3AED',
   },
+
+  // Forms
   formContainer: {
     padding: 20,
   },
   formLabel: {
-    color: '#ffffff',
+    color: '#1a1a2e',
     fontSize: 14,
     fontWeight: '700',
     marginBottom: 8,
     marginTop: 15,
   },
   input: {
-    backgroundColor: '#16213e',
+    backgroundColor: '#ffffff',
     borderRadius: 12,
     padding: 15,
-    color: '#ffffff',
+    color: '#1a1a2e',
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#2d3561',
+    borderColor: '#e9d5ff',
   },
   submitButton: {
-    backgroundColor: '#4ecdc4',
+    backgroundColor: '#7C3AED',
     padding: 18,
     borderRadius: 15,
     alignItems: 'center',
     marginTop: 30,
   },
   submitButtonText: {
-    color: '#0f0f1e',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '800',
   },
   disclaimer: {
-    color: '#8892b0',
+    color: '#6b7280',
     fontSize: 12,
     textAlign: 'center',
     marginTop: 15,
     fontStyle: 'italic',
   },
   adminNote: {
-    backgroundColor: '#ff6b6b',
+    backgroundColor: '#7C3AED',
     color: '#ffffff',
     padding: 15,
     borderRadius: 12,
@@ -822,7 +953,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   adminButton: {
-    backgroundColor: '#ff6b6b',
+    backgroundColor: '#6B21A8',
     padding: 18,
     borderRadius: 15,
     alignItems: 'center',
@@ -842,40 +973,40 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderWidth: 2,
-    borderColor: '#4ecdc4',
+    borderColor: '#7C3AED',
     borderRadius: 6,
     marginRight: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: '#4ecdc4',
+    backgroundColor: '#7C3AED',
   },
   checkmark: {
-    color: '#0f0f1e',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '800',
   },
   checkboxLabel: {
-    color: '#ffffff',
+    color: '#1a1a2e',
     fontSize: 14,
   },
   statsContainer: {
-    backgroundColor: '#16213e',
+    backgroundColor: '#ffffff',
     padding: 20,
     borderRadius: 15,
     marginTop: 30,
     borderWidth: 1,
-    borderColor: '#2d3561',
+    borderColor: '#e9d5ff',
   },
   statsTitle: {
-    color: '#4ecdc4',
+    color: '#7C3AED',
     fontSize: 16,
     fontWeight: '800',
     marginBottom: 15,
   },
   statsText: {
-    color: '#ffffff',
+    color: '#1a1a2e',
     fontSize: 14,
     marginBottom: 8,
   },
@@ -884,33 +1015,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#4ecdc4',
+    color: '#7C3AED',
     fontSize: 16,
     marginTop: 15,
     fontWeight: '600',
   },
   lastUpdated: {
-    color: '#8892b0',
+    color: '#d8b4fe',
     fontSize: 12,
     marginTop: 5,
   },
   errorBanner: {
-    backgroundColor: '#ff6b6b22',
+    backgroundColor: '#fef2f2',
     borderWidth: 1,
-    borderColor: '#ff6b6b',
+    borderColor: '#E11D48',
     marginHorizontal: 15,
     marginTop: 10,
     padding: 12,
     borderRadius: 10,
   },
   errorText: {
-    color: '#ff6b6b',
+    color: '#E11D48',
     fontSize: 13,
     textAlign: 'center',
     fontWeight: '600',
   },
   noDealsText: {
-    color: '#8892b0',
+    color: '#6b7280',
     fontSize: 15,
     textAlign: 'center',
     marginTop: 40,
